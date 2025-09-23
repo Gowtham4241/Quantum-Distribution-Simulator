@@ -91,23 +91,28 @@ def eavesdrop(circuits, eve_bases, eve_prob=0.0):
 
     return intercepted_circuits, eve_results
 
-def bb84_protocol(n_bits=10, seed=None, with_eve=False, eve_prob=0.0):
-    if seed is not None:
-        np.random.seed(seed)
-
-    # Alice's random bits & bases
-    alice_bits = np.random.randint(2, size=n_bits)
-    alice_bases = np.random.randint(2, size=n_bits)
-
-    # Bob's random bases
-    bob_bases = np.random.randint(2, size=n_bits)
-
+def bb84_protocol(n_bits=10, seed=None, with_eve=False, eve_prob=0.0,use_aer=True):
+    
+    if use_aer:
+        # Use Aer simulator as quantum RNG
+        alice_bits = np.array(generate_aer_random_bits(n_bits), dtype=int)
+        alice_bases = np.array(generate_aer_random_bits(n_bits), dtype=int)
+        bob_bases = np.array(generate_aer_random_bits(n_bits), dtype=int)
+    else:
+        if seed is not None:
+            np.random.seed(seed)
+        alice_bits = np.random.randint(2, size=n_bits)
+        alice_bases = np.random.randint(2, size=n_bits)
+        bob_bases = np.random.randint(2, size=n_bits)
     # Encode + measure
     message = encode_message(alice_bits, alice_bases)
     eve_bases = None
     eve_results = None
     if with_eve:
-        eve_bases = np.random.randint(2, size=n_bits)
+        if use_aer:
+            eve_bases = np.array(generate_aer_random_bits(n_bits), dtype=int)
+        else:
+            eve_bases = np.random.randint(2, size=n_bits)
         message, eve_results = eavesdrop(message, eve_bases, eve_prob=eve_prob)
 
     bob_circuits = measure_message(message, bob_bases)
@@ -267,6 +272,52 @@ def decrypt_message():
         return jsonify({'decrypted': decrypted})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+def generate_aer_random_bits(n_bits, backend=None, retries=2):
+    """
+    Generate n_bits random bits using Qiskit Aer qasm_simulator.
+    Builds a single n-qubit circuit with H on each qubit, measures all
+    qubits to classical bits and runs shots=1. Returns list of ints 0/1.
+    """
+    if n_bits <= 0:
+        return []
+
+    if backend is None:
+        backend = Aer.get_backend("qasm_simulator")
+
+    # build circuit: n qubits, n classical bits
+    qc = QuantumCircuit(n_bits, n_bits)
+    for q in range(n_bits):
+        qc.h(q)          # create superposition
+    qc.measure(range(n_bits), range(n_bits))
+    
+    # run once (shots=1), with a couple retries to handle transient issues
+    attempt = 0
+    while attempt <= retries:
+        try:
+            transpiled = transpile(qc, backend)
+            job = backend.run(transpiled, shots=1)
+            result = job.result()
+            counts = result.get_counts()
+            # get the single measured bitstring (the key), e.g. '0101'
+            bitstring = next(iter(counts.keys()))
+            # Qiskit returns bitstring with qubit-0 as rightmost character, so reverse
+            bitstring = bitstring[::-1]
+            bits = [int(b) for b in bitstring]
+            # if backend returned shorter/longer string for some reason, normalize
+            if len(bits) != n_bits:
+                # pad with zeros or truncate as needed
+                if len(bits) < n_bits:
+                    bits.extend([0] * (n_bits - len(bits)))
+                else:
+                    bits = bits[:n_bits]
+            return bits
+        except Exception as e:
+            attempt += 1
+            if attempt > retries:
+                # final fallback: cryptographically secure pseudo-random
+                print(f"Aer RNG failed after {retries} retries: {e}. Falling back to secrets.randbits")
+                import secrets
+                return [secrets.randbits(1) for _ in range(n_bits)]
 
 import os
 
