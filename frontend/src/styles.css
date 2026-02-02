@@ -124,6 +124,7 @@ body {
   flex-direction: column;
   gap: 12px;
   min-width: 0;
+  position: relative; /* needed so info icon stays inside the control */
 }
 
 .control-item label {
@@ -505,6 +506,53 @@ tr.highlighted {
   padding: 24px;
   box-shadow: var(--shadow-1);
   transition: all 0.3s ease;
+  position: relative; /* keep info icon inside card boundary */
+}
+
+/* Info icon (shared small ℹ️ button) */
+.info-icon {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 15px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.9;
+  padding: 2px;
+  line-height: 1;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+/* slightly smaller variant used in control items */
+.info-icon.small { font-size: 13px; }
+
+.info-icon:hover, .info-icon:focus {
+  transform: scale(1.08);
+  opacity: 1;
+  outline: none;
+}
+
+/* Small tooltip box for info icons */
+.info-tooltip {
+  position: absolute;
+  top: 40px;
+  right: 12px;
+  width: 220px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(246,247,249,0.98));
+  color: #0f172a;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  z-index: 60;
+  pointer-events: auto;
+}
+
+/* Keep tooltip readable on small screens */
+@media (max-width: 480px) {
+  .info-tooltip { width: 180px; right: 8px; left: 8px; top: 44px; }
 }
 
 .result-card:hover {
@@ -573,6 +621,7 @@ tr.highlighted {
   padding: 28px;
   box-shadow: var(--shadow-1);
   margin-bottom: 32px;
+  position: relative; /* keep info icon inside the section */
 }
 
 .encryption-section h2 {
@@ -1018,4 +1067,516 @@ tr.highlighted {
   border-radius: 20px;
   padding: 10px 15px;
   cursor: pointer;
+}
+/* ========================================
+   ROW DETAIL PANEL STYLES
+   ======================================== */
+
+/* Row Detail Panel */
+.row-detail-panel {
+  background: linear-gradient(135deg, #f8fafc, #ffffff);
+  border: 2px solid #4A90E2;
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  margin-top: -1px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.1);
+  overflow: hidden;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-header h3 {
+  margin: 0;
+  color: #2c5282;
+  font-size: 1.2rem;
+}
+
+.close-detail {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #718096;
+  cursor: pointer;
+  padding: 0 10px;
+}
+
+.close-detail:hover {
+  color: #e53e3e;
+}
+
+.detail-content {
+  display: grid;
+  gap: 20px;
+}
+
+.quantum-state {
+  background: #edf2f7;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 4px solid #4A90E2;
+}
+
+.state-label {
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 5px;
+}
+
+.state-value {
+  font-family: 'SF Mono', Monaco, monospace;
+  color: #2c5282;
+  font-weight: 500;
+}
+
+.key-points h4 {
+  color: #4a5568;
+  margin-bottom: 10px;
+}
+
+.key-points ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.key-points li {
+  padding: 8px 0;
+  border-bottom: 1px solid #e2e8f0;
+  color: #4a5568;
+}
+
+.key-points li:before {
+  content: "•";
+  color: #4A90E2;
+  font-weight: bold;
+  display: inline-block;
+  width: 1em;
+  margin-left: -1em;
+}
+
+.outcome-section h4 {
+  color: #4a5568;
+  margin-bottom: 10px;
+}
+
+.outcome {
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.outcome.correct {
+  background: #c6f6d5;
+  color: #22543d;
+  border: 1px solid #9ae6b4;
+}
+
+.outcome.warning {
+  background: #fed7d7;
+  color: #742a2a;
+  border: 1px solid #fc8181;
+}
+
+/* Quantum Diagram */
+.quantum-diagram {
+  background: white;
+  border: 1px solid #cbd5e0;
+  border-radius: 10px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.diagram-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.party-diagram {
+  text-align: center;
+  padding: 10px;
+  min-width: 100px;
+}
+
+.party-label {
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #2d3748;
+}
+
+.photon-path {
+  flex: 1;
+  position: relative;
+  height: 60px;
+  margin: 0 20px;
+}
+
+.path-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #4A90E2, #4299e1, #4A90E2);
+  z-index: 1;
+}
+
+.photon-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  z-index: 2;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+
+.eve-intercept {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 3;
+}
+
+.eve-icon {
+  font-size: 20px;
+  color: #e53e3e;
+}
+
+.eve-label {
+  font-size: 12px;
+  color: #e53e3e;
+  font-weight: 600;
+}
+
+.basis-match {
+  text-align: center;
+  padding: 8px;
+  border-radius: 6px;
+  margin-top: 10px;
+}
+
+.match-yes {
+  background: #c6f6d5;
+  color: #22543d;
+  padding: 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.match-no {
+  background: #fed7d7;
+  color: #742a2a;
+  padding: 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+/* Decision Box */
+.decision-box {
+  margin-top: 15px;
+}
+
+.decision-box h4 {
+  color: #4a5568;
+  margin-bottom: 10px;
+}
+
+.decision {
+  padding: 15px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: center;
+  border: 2px solid;
+}
+
+.decision.keep {
+  background: #f0fff4;
+  color: #22543d;
+  border-color: #9ae6b4;
+}
+
+.decision.discard {
+  background: #fff5f5;
+  color: #742a2a;
+  border-color: #fc8181;
+}
+
+/* Selected row style */
+tr.selected {
+  box-shadow: inset 0 0 0 2px #4A90E2 !important;
+  background-color: #ebf8ff !important;
+}
+
+/* Hover effect for clickable rows */
+tr:not(.selected):hover {
+  background-color: #f7fafc !important;
+  cursor: pointer;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .diagram-row {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .photon-path {
+    width: 100%;
+    height: 40px;
+    margin: 10px 0;
+  }
+  
+  .row-detail-panel {
+    padding: 15px;
+  }
+}
+/* ========================================
+   ROW TOOLTIP STYLES
+   ======================================== */
+
+/* Tooltip Container */
+.row-tooltip {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  min-width: 320px;
+  max-width: 400px;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(59, 130, 246, 0.2);
+  padding: 0;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(-50%) translateY(0px); }
+  50% { transform: translateY(-50%) translateY(-5px); }
+}
+
+/* Tooltip Header */
+.tooltip-header {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.tooltip-header h4 {
+  margin: 0 0 8px 0;
+  color: #e2e8f0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.tooltip-status {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.status {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.status.eve {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.status.secure {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.5);
+}
+
+.status.match {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.5);
+}
+
+.status.mismatch {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+}
+
+/* Tooltip Content */
+.tooltip-content {
+  padding: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.tooltip-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tooltip-content::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.5);
+  border-radius: 3px;
+}
+
+.tooltip-content::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.5);
+}
+
+.explanation-line {
+  padding: 8px 0;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.5;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+  animation: fadeIn 0.2s ease-out forwards;
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.explanation-line:nth-child(1) { animation-delay: 0.05s; }
+.explanation-line:nth-child(2) { animation-delay: 0.1s; }
+.explanation-line:nth-child(3) { animation-delay: 0.15s; }
+.explanation-line:nth-child(4) { animation-delay: 0.2s; }
+.explanation-line:nth-child(5) { animation-delay: 0.25s; }
+.explanation-line:nth-child(6) { animation-delay: 0.3s; }
+.explanation-line:nth-child(7) { animation-delay: 0.35s; }
+.explanation-line:nth-child(8) { animation-delay: 0.4s; }
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.explanation-line:last-child {
+  border-bottom: none;
+}
+
+/* Tooltip Footer */
+.tooltip-footer {
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.8);
+  border-top: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.bit-comparison {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bit {
+  padding: 6px 12px;
+  border-radius: 6px;
+  min-width: 70px;
+  text-align: center;
+}
+
+.bit.alice {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.bit.bob {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.arrow {
+  color: #cbd5e1;
+  font-size: 16px;
+}
+
+/* Tooltip Arrow */
+.tooltip-arrow {
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 8px solid rgba(59, 130, 246, 0.5);
+}
+
+.tooltip-arrow:after {
+  content: '';
+  position: absolute;
+  left: 1px;
+  top: -7px;
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-right: 7px solid #0f172a;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .row-tooltip {
+    min-width: 280px;
+    max-width: 300px;
+    transform: translateX(-50%) !important;
+    left: 50% !important;
+    top: auto !important;
+    bottom: 20px !important;
+    transform: none !important;
+    animation: float-mobile 6s ease-in-out infinite;
+  }
+  
+  @keyframes float-mobile {
+    0%, 100% { transform: translateX(-50%) translateY(0px); }
+    50% { transform: translateX(-50%) translateY(-5px); }
+  }
+  
+  .tooltip-arrow {
+    display: none;
+  }
+}
+
+/* Add hover effect to table rows */
+tr {
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+tr:hover {
+  transform: translateX(4px);
+  box-shadow: inset 4px 0 0 rgba(59, 130, 246, 0.3);
+}
+
+/* Prevent tooltip from flashing during scroll */
+.row-tooltip {
+  transition: opacity 0.15s ease;
 }
