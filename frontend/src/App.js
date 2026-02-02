@@ -20,6 +20,13 @@ const BB84Simulator = () => {
   const [encryptedData, setEncryptedData] = useState(null);
   const [decryptedMessage, setDecryptedMessage] = useState("");
   const [securityWarning, setSecurityWarning] = useState("");
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [tooltipData, setTooltipData] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
+  // Info icon tooltip state (for small ℹ️ icons in cards/controls)
+  const [infoVisible, setInfoVisible] = useState(null); // id of currently visible tooltip
+  const [infoPinned, setInfoPinned] = useState(null); // id of tooltip pinned open via click
 
   // QA Knowledge Base for chatbot
   const QA_KB = [
@@ -275,6 +282,101 @@ const BB84Simulator = () => {
     });
   };
 
+  // Hover handlers for tooltip
+  const handleRowHover = (e, row, index) => {
+    // prefer mouse coordinates so the tooltip follows the cursor; fall back to row rect for keyboard focus
+    const tooltipWidth = 380;
+    let x, y;
+
+    if (e && typeof e.clientX === 'number' && typeof e.clientY === 'number') {
+      x = e.clientX + 18; // place tooltip to the right of cursor
+      if (x + tooltipWidth > window.innerWidth) {
+        x = e.clientX - tooltipWidth - 18; // flip to left side when near edge
+      }
+      x = Math.max(8, x);
+      y = e.clientY;
+      y = Math.max(12, Math.min(window.innerHeight - 12, y));
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      x = rect.right + 12;
+      if (x + tooltipWidth > window.innerWidth) {
+        x = Math.max(12, rect.left - tooltipWidth - 12);
+      }
+      y = rect.top + rect.height / 2;
+    }
+
+    setTooltipPosition({ x, y });
+
+    const aliceBit = row["Alice Bit"];
+    const bobBit = row["Bob Measured Bit"];
+    const eveIntercept = row["Eve Intercepting"] === "Yes";
+    const basesMatch = row["Match"] === "Yes";
+    const explanations = [];
+
+    // 1. Why Bob measured a different bit than Alice (if error)
+    if (basesMatch) {
+      if (aliceBit !== bobBit) {
+        if (eveIntercept) {
+          explanations.push("Although bases matched, the bits differ — Eve or channel noise likely disturbed the photon when she intercepted it.");
+        } else {
+          explanations.push("Bases matched but bits differ — likely due to channel noise or measurement error.");
+        }
+      } else {
+        explanations.push("Bases matched and bits agree — Bob measured the same bit as Alice.");
+      }
+    } else {
+      explanations.push("Bases differed — Bob measured in a different basis, which yields an uncorrelated (random) result.");
+    }
+
+    // 2. What happened when Eve intercepted the photon
+    if (eveIntercept) {
+      explanations.push(`Eve intercepted this photon and measured it (reported bit: ${row["Eve Bit"]}). Her measurement collapsed the quantum state and may have changed the bit.`);
+    } else {
+      explanations.push("Eve did not intercept this photon.");
+    }
+
+    // 3. Why kept or discarded
+    if (basesMatch) {
+      explanations.push("This photon is kept during sifting because Alice and Bob used the same basis.");
+    } else {
+      explanations.push("This photon is discarded during sifting because bases differed.");
+    }
+
+    setTooltipData({
+      index: index + 1,
+      aliceBit,
+      bobBit,
+      eveIntercept,
+      basesMatch,
+      explanations
+    });
+    setTooltipVisible(true);
+  };
+
+  const handleRowHoverMove = (e) => {
+    // use mouse coordinates so tooltip follows cursor while hovering the row
+    const tooltipWidth = 380;
+    let x = e.clientX + 18;
+    if (x + tooltipWidth > window.innerWidth) {
+      x = e.clientX - tooltipWidth - 18;
+    }
+    x = Math.max(8, x);
+    let y = e.clientY;
+    y = Math.max(12, Math.min(window.innerHeight - 12, y));
+    setTooltipPosition({ x, y });
+  };
+
+  // Small info tooltip component used by ℹ️ icons (kept local and lightweight)
+  const InfoTooltip = ({ id, text }) => {
+    const visible = infoVisible === id || infoPinned === id;
+    if (!visible) return null;
+    return (
+      <div className="info-tooltip" role="status" aria-live="polite" onMouseEnter={() => { if (!infoPinned) setInfoVisible(id); }}>
+        {text}
+      </div>
+    );
+  };
+
   // Modify encryptMessage function to check QBER
   const encryptMessage = async () => {
     if (parseFloat(qber) > 20) {
@@ -399,11 +501,30 @@ const BB84Simulator = () => {
         <div className="controls">
           {[
             { label: "Number of photons", value: n, min: 10, max: 50, step: 1, setter: setN },
-            { label: "Eve probability", value: eveProb, min: 0, max: 1, step: 0.1, setter: setEveProb, format: (v) => `${(v * 100).toFixed(0)}%` },
+            { label: "Eve probability", value: eveProb, min: 0, max: 1, step: 0.1, setter: setEveProb, format: (v) => `${(v * 100).toFixed(0)}%`, infoId: 'eveProb', infoText: 'Controls how often Eve intercepts photons; higher values typically increase QBER.' },
             { label: "Animation speed", value: speed, min: 10, max: 300, step: 10, setter: setSpeed, format: (v) => `${v}ms` },
           ].map((ctrl) => (
             <div key={ctrl.label} className="control-item">
-              <label>{ctrl.label}: {ctrl.format ? ctrl.format(ctrl.value) : ctrl.value}</label>
+              <label>
+                {ctrl.label}: {ctrl.format ? ctrl.format(ctrl.value) : ctrl.value}
+              </label>
+
+              {ctrl.infoText && (
+                <>
+                  <button
+                    className="info-icon small"
+                    aria-label={`About ${ctrl.label}`}
+                    onMouseEnter={() => { if (!infoPinned) setInfoVisible(ctrl.infoId); }}
+                    onMouseLeave={() => { if (!infoPinned) setInfoVisible(null); }}
+                    onClick={() => setInfoPinned(prev => prev === ctrl.infoId ? null : ctrl.infoId)}
+                    title="More info"
+                  >
+                    ℹ️
+                  </button>
+                  <InfoTooltip id={ctrl.infoId} text={ctrl.infoText} />
+                </>
+              )}
+
               <input
                 type="range"
                 min={ctrl.min}
@@ -501,28 +622,97 @@ const BB84Simulator = () => {
               </tr>
             </thead>
             <tbody>
-              {tableData.map((row, idx) => {
-                const aliceBit = row["Alice Bit"];
-                const bobBit = row["Bob Measured Bit"];
-                const eveIntercept = row["Eve Intercepting"] === "Yes";
-                const basesMatch = row["Match"] === "Yes";
+              {tableData.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '20px' }}>No data yet — run simulation</td>
+                </tr>
+              ) : (
+                tableData.map((row, i) => {
+                  const aliceBit = row["Alice Bit"];
+                  const bobBit = row["Bob Measured Bit"];
+                  const eveIntercept = row["Eve Intercepting"] === "Yes";
+                  const eveBitDisplay = row["Eve Bit"];
+                  const match = row["Match"] === "Yes";
 
-                let rowClass = "";
-                if (highlightedRow === idx) rowClass = "highlighted";
-                else if (eveIntercept) rowClass = "eve-present";
-                else if (!basesMatch) rowClass = "bases-differ";
-                else if (aliceBit !== bobBit) rowClass = "error";
-                else if (aliceBit === bobBit) rowClass = "correct";
+                  let rowClass = match ? 'correct' : 'bases-differ';
+                  if (eveIntercept) rowClass = 'eve-present';
+                  if (match && aliceBit !== bobBit) rowClass = 'error';
 
-                return (
-                  <tr key={idx} className={rowClass}>
-                    {Object.values(row).map((val, i) => (
-                      <td key={i}>{val}</td>
-                    ))}
-                  </tr>
-                );
-              })}
+                  return (
+                    <tr
+                      key={i}
+                      className={`${rowClass} ${highlightedRow === i ? 'highlighted selected' : ''}`}
+                      onMouseEnter={(e) => handleRowHover(e, row, i)}
+                      onMouseMove={(e) => handleRowHoverMove(e)}
+                      onMouseLeave={() => setTooltipVisible(false)}
+                      onFocus={(e) => handleRowHover(e, row, i)}
+                      onBlur={() => setTooltipVisible(false)}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <td><BasisIndicator basis={row["Alice Basis"].includes("+") ? 0 : 1} /></td>
+                      <td><BitIndicator bit={row["Alice Bit"]} /></td>
+                      <td><BasisIndicator basis={row["Bob Basis"].includes("+") ? 0 : 1} /></td>
+                      <td><BitIndicator bit={row["Bob Measured Bit"]} /></td>
+                      <td>{eveBitDisplay === "-" ? "-" : <BitIndicator bit={eveBitDisplay} />}</td>
+                      <td>{row["Eve Intercepting"]}</td>
+                      <td>{row["Match"]}</td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
+             {/* Tooltip Component */}
+      <AnimatePresence>
+        {tooltipVisible && tooltipData && (
+          <motion.div
+            key="tooltip"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="row-tooltip"
+            style={{
+              left: `${tooltipPosition.x}px`,
+              top: `${tooltipPosition.y}px`,
+              transform: 'translateY(-50%)'
+            }}
+          >
+            <div className="tooltip-header">
+              <h4>Photon {tooltipData.index} Analysis</h4>
+              <div className="tooltip-status">
+                {tooltipData.eveIntercept ? (
+                  <span className="status eve">🔴 Eve Present</span>
+                ) : (
+                  <span className="status secure">🟢 Secure</span>
+                )}
+                {tooltipData.basesMatch ? (
+                  <span className="status match">✅ Bases Match</span>
+                ) : (
+                  <span className="status mismatch">❌ Bases Mismatch</span>
+                )}
+              </div>
+            </div>
+            
+            <div className="tooltip-content">
+              {tooltipData.explanations.map((text, i) => (
+                <div key={i} className="explanation-line">
+                  {text}
+                </div>
+              ))}
+            </div>
+            
+            <div className="tooltip-footer">
+              <div className="bit-comparison">
+                <span className="bit alice">Alice: {tooltipData.aliceBit}</span>
+                <span className="arrow">→</span>
+                <span className="bit bob">Bob: {tooltipData.bobBit}</span>
+              </div>
+            </div>
+            
+            <div className="tooltip-arrow"></div>
+          </motion.div>
+        )}
+      </AnimatePresence>
           </table>
         </div>
       </div>
@@ -544,6 +734,17 @@ const BB84Simulator = () => {
           </div>
           
           <div className="result-card">
+            <button
+              className="info-icon"
+              aria-label="About QBER"
+              onMouseEnter={() => { if (!infoPinned) setInfoVisible('qber'); }}
+              onMouseLeave={() => { if (!infoPinned) setInfoVisible(null); }}
+              onClick={() => setInfoPinned(prev => prev === 'qber' ? null : 'qber')}
+              title="More info"
+            >
+              ℹ️
+            </button>
+            <InfoTooltip id="qber" text="QBER is the fraction of mismatched bits in the sifted key; high QBER indicates noise or possible eavesdropping." />
             <h3>Quantum Bit Error Rate</h3>
             <div className="qber-value">{qber}%</div>
             <p>{qber > 20 ? "High error rate - Eve might be present!" : "Low error rate - channel is secure"}</p>
@@ -564,6 +765,17 @@ const BB84Simulator = () => {
       </div>
 
       <div className="encryption-section">
+        <button
+          className="info-icon"
+          aria-label="About AES Encryption"
+          onMouseEnter={() => { if (!infoPinned) setInfoVisible('encryption'); }}
+          onMouseLeave={() => { if (!infoPinned) setInfoVisible(null); }}
+          onClick={() => setInfoPinned(prev => prev === 'encryption' ? null : 'encryption')}
+          title="More info"
+        >
+          ℹ️
+        </button>
+        <InfoTooltip id="encryption" text="AES uses a privacy-amplified key derived from the sifted bits (SHA-256). Encryption is blocked if QBER is too high." />
         <h2>AES Encryption {parseFloat(qber) > 20 && "(Disabled - High QBER)"}</h2>
         
         <div className="encryption-controls">
