@@ -8,12 +8,45 @@ import random
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import base64
-import json
+import os
 from functools import wraps
 import hashlib 
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for React frontend
+# IBM Quantum Service
+try:
+    from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler
+    # Note: If you haven't saved your account locally, you can do so here:
+    # QiskitRuntimeService.save_account(channel="ibm_quantum", token="YOUR_TOKEN", overwrite=True)
+    
+    # Check if we can initialize the service
+    service = QiskitRuntimeService()
+    IBM_AVAILABLE = True
+    print("✅ IBM Quantum Service detected.")
+except Exception as e:
+    print(f"⚠️ IBM Quantum Service not available: {e}")
+    IBM_AVAILABLE = False
+
+def get_backend(use_real=True,min_qubits=1):
+    """
+    Returns IBM real backend if available, else Aer simulator
+    """
+    if use_real and IBM_AVAILABLE:
+        try:
+            backend = service.least_busy(
+                operational=True, 
+                simulator=False,
+                min_num_qubits=min_qubits
+            )
+            print(f"✅ Using REAL IBM backend: {backend.name} ({backend.num_qubits} qubits)")
+            return backend
+        except Exception as e:
+            print("⚠️ IBM backend error:", e)
+
+    print("⚠️ Using AER Simulator")
+    return Aer.get_backend("qasm_simulator")
+
 
 def encode_message(bits, bases):
     circuits = []
@@ -52,90 +85,167 @@ def calculate_qber(alice_key, bob_key):
     qber = errors / len(alice_key)
     return qber
 
-def eavesdrop(circuits, eve_bases, eve_prob=0.0):
-    """Eve intercepts, measures, and resends qubits with probability eve_prob."""
-    intercepted_circuits = []
+def eavesdrop_simulation(alice_bits, alice_bases, eve_bases, eve_prob):
+    """
+    Simulate Eve's interception purely in software/simulator.
+    Returns:
+        eve_results: list of bits Eve measured (or None)
+        new_alice_bits: The bits Bob effectively receives (modified by Eve)
+        new_alice_bases: The bases Bob effectively sees (modified by Eve)
+    """
     eve_results = []
+    # These become the "effective" state sent to Bob
+    resend_bits = list(alice_bits)
+    resend_bases = list(alice_bases)
 
-    backend = Aer.get_backend("qasm_simulator")
+    for i in range(len(alice_bits)):
+        if random.random() < eve_prob:
+            # Eve Intercepts!
+            # 1. Create a temp circuit for this 1 bit to simulate measurement
+            qc = QuantumCircuit(1, 1)
+            
+            # Alice prepares
+            if alice_bases[i] == 1: # X basis
+                if alice_bits[i] == 0: qc.h(0)
+                else: qc.x(0); qc.h(0)
+            else: # Z basis
+                if alice_bits[i] == 1: qc.x(0)
+            
+            # Eve measures
+            if eve_bases[i] == 1: # Measure in X
+                qc.h(0)
+            qc.measure(0, 0)
 
-    for i, (qc, basis) in enumerate(zip(circuits, eve_bases)):
-        if random.random() < eve_prob:  # Eve intercepts this qubit
-            eve_circuit = qc.copy()
-            if basis == 1:  # measure in X basis
-                eve_circuit.h(0)
-            eve_circuit.measure(0, 0)
-
-            # Run Eve's measurement (1 shot, like real life)
-            job = backend.run(transpile(eve_circuit, backend), shots=1)
-            counts = job.result().get_counts()
-            bit = int(max(counts, key=counts.get))
+            # Run strictly on simulator for speed
+            sim = Aer.get_backend("qasm_simulator")
+            job = sim.run(transpile(qc, sim), shots=1)
+            bit = int(list(job.result().get_counts().keys())[0])
+            
             eve_results.append(bit)
-
-            # Eve resends according to her result & basis
-            resent = QuantumCircuit(1, 1)
-            if basis == 0:  # Z basis
-                if bit == 1:
-                    resent.x(0)
-            else:  # X basis
-                if bit == 0:
-                    resent.h(0)
-                else:
-                    resent.x(0)
-                    resent.h(0)
-
-            intercepted_circuits.append(resent)
-        else:  # Eve does not intercept → qubit passes untouched
-            eve_results.append(None)  # no measurement
-            intercepted_circuits.append(qc.copy())
-
-    return intercepted_circuits, eve_results
-
-def bb84_protocol(n_bits=10, seed=None, with_eve=False, eve_prob=0.0,use_aer=True):
-    
-    if use_aer:
-        # Use Aer simulator as quantum RNG
-        alice_bits = np.array(generate_aer_random_bits(n_bits), dtype=int)
-        alice_bases = np.array(generate_aer_random_bits(n_bits), dtype=int)
-        bob_bases = np.array(generate_aer_random_bits(n_bits), dtype=int)
-    else:
-        if seed is not None:
-            np.random.seed(seed)
-        alice_bits = np.random.randint(2, size=n_bits)
-        alice_bases = np.random.randint(2, size=n_bits)
-        bob_bases = np.random.randint(2, size=n_bits)
-    # Encode + measure
-    message = encode_message(alice_bits, alice_bases)
-    eve_bases = None
-    eve_results = None
-    if with_eve:
-        if use_aer:
-            eve_bases = np.array(generate_aer_random_bits(n_bits), dtype=int)
+            
+            # Eve Resends (Modifies the bit/basis Bob will see)
+            # Conceptually, Eve replaces Alice's photon with her own
+            resend_bits[i] = bit
+            resend_bases[i] = eve_bases[i]
         else:
-            eve_bases = np.random.randint(2, size=n_bits)
-        message, eve_results = eavesdrop(message, eve_bases, eve_prob=eve_prob)
+            eve_results.append(None)
+    
+    return eve_results, resend_bits, resend_bases
 
-    bob_circuits = measure_message(message, bob_bases)
+def bb84_protocol(n_bits=10, seed=None, with_eve=False, eve_prob=0.0, use_aer=True):
+    
+    # 1. Generate Alice's random bits and bases
+    if seed is not None:
+        np.random.seed(seed)
+        
+    alice_bits = np.random.randint(2, size=n_bits)
+    alice_bases = np.random.randint(2, size=n_bits)
+    bob_bases = np.random.randint(2, size=n_bits)
+    
+    # 2. Handle Eve (Simulation/Classical Pre-processing)
+    # We do this classically/locally so we don't need interactive dynamic circuits on hardware
+    eve_results = [None] * n_bits
+    effective_bits = alice_bits
+    effective_bases = alice_bases
 
-    # Run on local simulator
-    backend = Aer.get_backend("qasm_simulator")
-    transpiled = transpile(bob_circuits, backend)
-    job = backend.run(transpiled, shots=1)
+    if with_eve:
+        eve_bases = np.random.randint(2, size=n_bits)
+        eve_results, effective_bits, effective_bases = eavesdrop_simulation(
+            alice_bits, alice_bases, eve_bases, eve_prob
+        )
 
-    results = job.result()
-    bob_results = []
+    # 3. BUILD ONE PARALLEL CIRCUIT
+    # Instead of list of N circuits, we make 1 circuit with N qubits
+    qc = QuantumCircuit(n_bits, n_bits)
+
     for i in range(n_bits):
-        counts = results.get_counts(i)
-        outcome = max(counts, key=counts.get)
-        bob_results.append(int(outcome))
+        # A. Alice (or Eve's resent state) prepares qubit i
+        bit = effective_bits[i]
+        basis = effective_bases[i]
 
-    # Sifted keys
-    alice_key = remove_garbage(alice_bases, bob_bases, alice_bits)
-    bob_key = remove_garbage(alice_bases, bob_bases, bob_results)
+        if basis == 0:  # Z basis
+            if bit == 1:
+                qc.x(i)
+        else:  # X basis
+            if bit == 0:
+                qc.h(i)
+            else:
+                qc.x(i)
+                qc.h(i)
+
+        # B. Bob measures qubit i
+        b_basis = bob_bases[i]
+        if b_basis == 1: # X basis measurement
+            qc.h(i)
+        
+        qc.measure(i, i)
+
+    # 4. EXECUTION
+    backend = get_backend(use_real=not use_aer, min_qubits=n_bits)
+    bob_results = []
+
+    if IBM_AVAILABLE and not use_aer:
+        print(f"🚀 Running PARALLEL Job on: {backend.name}")
+        
+        # A. Transpile ONE circuit
+        isa_circuit = transpile(qc, backend=backend, optimization_level=1)
+        
+        # B. Run ONE job
+        sampler = Sampler(mode=backend)
+        job = sampler.run([isa_circuit]) # Send list containing 1 circuit
+        print(f"Job ID: {job.job_id()}")
+        
+        # C. Get Result
+        try:
+            result = job.result()
+            # Get counts from the first (and only) pub result
+            pub_result = result[0]
+            # Handle different register names (c vs meas)
+            if hasattr(pub_result.data, 'c'):
+                counts = pub_result.data.c.get_counts()
+            else:
+                first_key = next(iter(pub_result.data))
+                counts = getattr(pub_result.data, first_key).get_counts()
+            
+            # Counts key is a bitstring "10010...", we need to parse it
+            # Qiskit bitstrings are little-endian (qubit 0 is rightmost)
+            measured_string = max(counts, key=counts.get) # Get most probable bitstring
+            
+            # Reverse to match array index (index 0 -> left)
+            measured_string = measured_string[::-1]
+            
+            # If backend returned fewer bits (rare), pad it
+            if len(measured_string) < n_bits:
+                measured_string = measured_string.ljust(n_bits, '0')
+
+            bob_results = [int(bit) for bit in measured_string[:n_bits]]
+
+        except Exception as e:
+            print(f"Error parsing results: {e}")
+            # Fallback to zeros if parse fails
+            bob_results = [0] * n_bits
+    else:
+        # Simulator run
+        job = backend.run(transpile(qc, backend), shots=1)
+        result = job.result()
+        counts = result.get_counts()
+        measured_string = list(counts.keys())[0] # "010101"
+        measured_string = measured_string[::-1] # Reverse for index matching
+        bob_results = [int(bit) for bit in measured_string[:n_bits]]
+
+    # 5. Sifting and QBER
+    alice_key = []
+    bob_key = []
+    matched_indices = []
+
+    for i in range(n_bits):
+        if alice_bases[i] == bob_bases[i]:
+            alice_key.append(alice_bits[i])
+            bob_key.append(bob_results[i])
+            matched_indices.append(i)
 
     qber = calculate_qber(alice_key, bob_key)
-
-    # Format table data for frontend
+    # 6. Format Table Data
     table_data = []
     for i in range(n_bits):
         eve_intercepted = with_eve and eve_results[i] is not None
@@ -149,20 +259,19 @@ def bb84_protocol(n_bits=10, seed=None, with_eve=False, eve_prob=0.0,use_aer=Tru
             "Match": "Yes" if alice_bases[i] == bob_bases[i] else "No"
         })
 
-    # Get Eve's key (only bits she intercepted and where bases matched)
-    eve_key = []
-    if with_eve and eve_results is not None:
-        for i in range(n_bits):
-            if alice_bases[i] == bob_bases[i] and eve_results[i] is not None:
-                eve_key.append(int(eve_results[i]))
+    eve_key_extracted = []
+    if with_eve:
+        for i in matched_indices:
+            if eve_results[i] is not None:
+                eve_key_extracted.append(int(eve_results[i]))
 
     return {
         "table_data": table_data,
-        "alice_key": [int(bit) for bit in alice_key],
-        "bob_key": [int(bit) for bit in bob_key],
+        "alice_key": [int(b) for b in alice_key],
+        "bob_key": [int(b) for b in bob_key],
         "qber": float(qber),
-        "eve_key": eve_key,
-        "matched_indices": [i for i in range(n_bits) if alice_bases[i] == bob_bases[i]]
+        "eve_key": eve_key_extracted,
+        "matched_indices": matched_indices
     }
 def check_security(qber_threshold=0.1):
     def decorator(f):
@@ -233,15 +342,16 @@ def run_bb84():
     n_bits = data.get('n_bits', 10)
     eve_prob = data.get('eve_prob', 0.3)
     seed = data.get('seed', None)
-    
+    use_real = data.get("use_real", False)
     with_eve = eve_prob > 0
     
     try:
         results = bb84_protocol(
-            n_bits=n_bits, 
-            seed=seed, 
-            with_eve=with_eve, 
-            eve_prob=eve_prob
+            n_bits=n_bits,
+            seed=seed,
+            with_eve=with_eve,
+            eve_prob=eve_prob,
+            use_aer=not use_real
         )
         return jsonify(results)
     except Exception as e:
@@ -258,6 +368,7 @@ def encrypt_message():
         encrypted = aes_encrypt(message, key)
         return jsonify(encrypted)
     except Exception as e:
+        print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/decrypt', methods=['POST'])
@@ -272,55 +383,44 @@ def decrypt_message():
         return jsonify({'decrypted': decrypted})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-def generate_aer_random_bits(n_bits, backend=None, retries=2):
+def generate_aer_random_bits(n_bits, retries=2):
     """
     Generate n_bits random bits using Qiskit Aer qasm_simulator.
-    Builds a single n-qubit circuit with H on each qubit, measures all
-    qubits to classical bits and runs shots=1. Returns list of ints 0/1.
     """
-    if n_bits <= 0:
-        return []
-
-    if backend is None:
-        backend = Aer.get_backend("qasm_simulator")
-
-    # build circuit: n qubits, n classical bits
+    if n_bits <= 0: return []
+    
+    # Force Aer simulator for RNG to avoid wasting QPU time/money
+    backend = Aer.get_backend("qasm_simulator")
+    
     qc = QuantumCircuit(n_bits, n_bits)
     for q in range(n_bits):
-        qc.h(q)          # create superposition
+        qc.h(q)
     qc.measure(range(n_bits), range(n_bits))
     
-    # run once (shots=1), with a couple retries to handle transient issues
     attempt = 0
     while attempt <= retries:
         try:
+            # Simple run on Aer
             transpiled = transpile(qc, backend)
             job = backend.run(transpiled, shots=1)
             result = job.result()
             counts = result.get_counts()
-            # get the single measured bitstring (the key), e.g. '0101'
             bitstring = next(iter(counts.keys()))
-            # Qiskit returns bitstring with qubit-0 as rightmost character, so reverse
+            # Reverse bitstring (Qiskit endianness)
             bitstring = bitstring[::-1]
             bits = [int(b) for b in bitstring]
-            # if backend returned shorter/longer string for some reason, normalize
-            if len(bits) != n_bits:
-                # pad with zeros or truncate as needed
-                if len(bits) < n_bits:
-                    bits.extend([0] * (n_bits - len(bits)))
-                else:
-                    bits = bits[:n_bits]
-            return bits
+            
+            # Pad or truncate
+            if len(bits) < n_bits:
+                bits.extend([0] * (n_bits - len(bits)))
+            return bits[:n_bits]
         except Exception as e:
             attempt += 1
             if attempt > retries:
-                # final fallback: cryptographically secure pseudo-random
-                print(f"Aer RNG failed after {retries} retries: {e}. Falling back to secrets.randbits")
+                print(f"RNG Fallback: {e}")
                 import secrets
                 return [secrets.randbits(1) for _ in range(n_bits)]
-
-import os
-
+            
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render will supply PORT
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=port, debug=False,use_reloader=False)
