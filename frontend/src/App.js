@@ -6,7 +6,6 @@ import StatusBadges from "./StatusBadges";
 import StepTimeline from "./StepTimeline";
 import { useCursorPhotonPanel } from "./useCursorPhotonPanel";
 import { CursorPhotonPanel } from "./CursorPhotonPanel";
-import { BitBadge, BasisBadge, EveBitDisplay, YesNoText } from "./TableCellComponents";
 import "./TableStyles.css";
 
 const BB84Simulator = () => {
@@ -27,10 +26,47 @@ const BB84Simulator = () => {
   const [encryptedData, setEncryptedData] = useState(null);
   const [decryptedMessage, setDecryptedMessage] = useState("");
   const [securityWarning, setSecurityWarning] = useState("");
+  const [tooltipData, setTooltipData] = useState(null);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
 
   // Cursor-tracking photon panel hook
   const { hoverInfo, handleMouseEnter, handleMouseMove, handleMouseLeave } =
     useCursorPhotonPanel();
+
+  // Update QBER dynamically whenever tableData changes (frontend-only calculation)
+  useEffect(() => {
+    const total = tableData.length;
+    const intercepted = tableData.filter(r => r["Eve Intercepting"] === "Yes").length;
+    const value = total === 0 ? 0 : Number(((intercepted / total) * 100).toFixed(2));
+    setQBER(value);
+  }, [tableData]);
+
+  // Tooltip logic & explanations (why bits differ / Eve details)
+  const handleRowHover = (e, row, index) => {
+    const aliceBit = row["Alice Bit"];
+    const bobBit = row["Bob Measured Bit"];
+    const eveIntercept = row["Eve Intercepting"] === "Yes";
+    const basesMatch = row["Match"] === "Yes";
+    const explanations = [];
+
+    if (basesMatch) {
+      if (aliceBit !== bobBit) {
+        if (eveIntercept) explanations.push("Although bases matched, the bits differ — Eve may have altered the photon state.");
+        else explanations.push("Bases matched but bits differ — likely due to channel noise or measurement error.");
+      } else explanations.push("Bases matched and bits agree — Bob measured the same bit as Alice.");
+    } else {
+      explanations.push("Bases differed — Bob measured in a different basis, which yields an uncorrelated (random) result.");
+    }
+
+    if (eveIntercept) explanations.push(`Eve intercepted this photon and measured it (reported bit: ${row["Eve Bit"]}).`);
+    else explanations.push("Eve did not intercept this photon.");
+
+    if (basesMatch) explanations.push("This photon is kept during sifting because Alice and Bob used the same basis.");
+    else explanations.push("This photon is discarded during sifting because bases differed.");
+
+    setTooltipData({ index: index + 1, aliceBit, bobBit, eveIntercept, basesMatch, explanations });
+    setTooltipVisible(true);
+  };
 
   // QA Knowledge Base for chatbot
   const QA_KB = [
@@ -206,22 +242,16 @@ const BB84Simulator = () => {
     setQBER(0);
     setEveKey([]);
     setSecurityWarning("");
-    setTimeline("Sending request to quantum backend...");
+    setTimeline("");
     setEncryptedData(null);
     setDecryptedMessage("");
     setMessage("");
     try {
       const response = await fetch('http://localhost:5000/api/bb84', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          n_bits: n,
-          eve_prob: eveProb
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ n_bits: n, eve_prob: eveProb })
       });
-
       const data = await response.json();
       
       if (data.error) {
@@ -230,44 +260,22 @@ const BB84Simulator = () => {
         return;
       }
 
-      setTimeline("Quantum simulation complete. Animating...");
-      
-      // Animate the table data
+      // Animate and add rows to table
       for (let i = 0; i < data.table_data.length; i++) {
-        setTimeline(`📡 Displaying photon ${i + 1} of ${data.table_data.length}`);
-        
-        // Check if Eve intercepted this photon
         const eveHere = data.table_data[i]["Eve Intercepting"] === "Yes";
         setEveActive(eveHere);
-        
-        // Animate photon
         await animatePhoton(
           data.table_data[i]["Alice Bit"], 
           data.table_data[i]["Alice Basis"].includes("+") ? 0 : 1,
           eveHere
         );
-        
-        // Add row to table
         setTableData(prev => [...prev, data.table_data[i]]);
-      }
-
-      // Animate key sifting
-      setTimeline("🔍 Performing key sifting...");
-      for (let idx of data.matched_indices) {
-        setHighlightedRow(idx);
-        await new Promise((res) => setTimeout(res, 500));
-        setHighlightedRow(null);
-        await new Promise((res) => setTimeout(res, 200));
       }
 
       // Set final results
       setSiftedKey(data.bob_key);
-      setQBER((data.qber * 100).toFixed(2));
       setEveKey(data.eve_key);
       
-      // Check for security warning
-      
-      setTimeline("✅ Quantum simulation complete");
     } catch (error) {
       console.error('Error:', error);
       setTimeline("❌ Error connecting to quantum backend");
@@ -375,22 +383,22 @@ const BB84Simulator = () => {
   const BasisIndicator = ({ basis }) => (
     <span style={{ 
       display: "inline-block",
-      padding: "4px 12px",
+      padding: "4px 10px",
       borderRadius: "6px",
-      background: basis === 0 ? "rgba(74, 144, 226, 0.2)" : "rgba(255, 193, 7, 0.2)",
+      background: basis === 0 ? "rgba(74,144,226,0.15)" : "rgba(255,193,7,0.15)",
       border: `2px solid ${basis === 0 ? "#4A90E2" : "#FFC107"}`,
       color: basis === 0 ? "#4A90E2" : "#FFC107",
       fontWeight: "bold",
-      fontSize: "1.1em"
+      fontSize: "1.1em",
+      minWidth: "30px",
+      textAlign: "center"
     }}>
       {basis === 0 ? "+" : "×"}
     </span>
   );
 
   const BitIndicator = ({ bit }) => (
-    <span className={`bit-indicator ${bit === 0 ? "zero" : "one"}`}>
-      {bit}
-    </span>
+    <span className={`bit-indicator ${bit === 0 ? "zero" : "one"}`}>{bit}</span>
   );
 
   // Small presentational info tooltip (pure JSX + CSS)
@@ -450,99 +458,43 @@ const BB84Simulator = () => {
         </div>
       </div>
 
-
+      <StepTimeline 
+        isRunning={isRunning}
+        tableData={tableData}
+        siftedKey={siftedKey}
+        qber={qber}
+        encryptedData={encryptedData}
+        decryptedMessage={decryptedMessage}
+      />
 
       <div className="timeline">{timeline}</div>
-
-      <div className="quantum-channel-container">
-        <div className="quantum-channel">
-          <div className="party alice">
-            <div className="label">Alice</div>
-            <div className="description">Sender</div>
-            <div className="bit-display">
-              {photon && <BitIndicator bit={photon.bit} />}
-            </div>
-          </div>
-          
-          <div className="communication-line">
-            <AnimatePresence>
-              {photon && (
-                <motion.div
-                  key={animationKey}
-                  initial={{ left: "10%", opacity: 0, scale: 0.8 }}
-                  animate={{ left: "90%", opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
-                  transition={{ duration: speed / 1000, ease: "easeInOut" }}
-                  className="photon"
-                  style={{ color: photon.color }}
-                >
-                  <div className="photon-symbol">{photon.symbol}</div>
-                  <div className="photon-basis">
-                    <BasisIndicator basis={photon.basis} />
-                  </div>
-                  <div className="photon-bit">
-                    <BitIndicator bit={photon.bit} />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {eveActive && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.5, y: -20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.5, y: -20 }}
-                className="eve-indicator"
-              >
-                .
-              </motion.div>
-            )}
-          </div>
-          
-          <div className="party bob">
-            <div className="label">Bob</div>
-            <div className="description">Receiver</div>
-            <div className="bit-display">
-              {photon && <BitIndicator bit={photon.bit} />}
-            </div>
-          </div>
-
-          <div className={`party eve ${eveActive ? 'active' : ''}`}>
-            <div className="label">Eve</div>
-            <div className="description">Eavesdropper</div>
-          </div>
-        </div>
-      </div>
 
       <div className="results-table">
         <div className="table-wrapper">
           <table>
             <thead>
               <tr>
-                {["Alice Bases","Alice Bits", "Bob Basis", "Bob Measured Bit", "Eve Bits ", "Eve Intercepting", "Bases Match"].map((col) => (
-                  <th key={col}>{col === 'Bases Match' ? <>{col} <Info text={"Bits where Alice and Bob used the same measurement basis."} /></> : col}</th>
+                {["Alice Basis","Alice Bit", "Bob Basis", "Bob Measured Bit", "Eve Bit", "Eve Intercepting", "Match"].map((col) => (
+                  <th key={col}>{col}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {tableData.map((row, idx) => {
-                const aliceBit = row["Alice Bit"];
-                const bobBit = row["Bob Measured Bit"];
                 const eveIntercept = row["Eve Intercepting"] === "Yes";
                 const basesMatch = row["Match"] === "Yes";
-
-                let rowClass = "";
-                if (highlightedRow === idx) rowClass = "highlighted";
-                else if (eveIntercept && basesMatch) rowClass = "eve-yes-bases-yes";
-                else if (eveIntercept && !basesMatch) rowClass = "eve-yes-bases-no";
-                else if (!basesMatch) rowClass = "bases-no-dark";
-                else if (aliceBit !== bobBit) rowClass = "error";
-                else if (aliceBit === bobBit) rowClass = "correct";
+                
+                let rowClass = '';
+                if (highlightedRow === idx) rowClass = 'highlighted selected';
+                else if (eveIntercept && basesMatch) rowClass = 'eve-dark';
+                else if (eveIntercept && !basesMatch) rowClass = 'eve-light';
+                else if (!eveIntercept && basesMatch) rowClass = 'correct';
+                else rowClass = 'bases-differ';
 
                 // Map row data to expected format
                 const rowDataForPanel = {
                   aliceBit: parseInt(row["Alice Bit"]),
-                  aliceBasis: row["Alice Bases"],
+                  aliceBasis: row["Alice Basis"],
                   bobBasis: row["Bob Basis"],
                   bobMeasuredBit: parseInt(row["Bob Measured Bit"]),
                   eveIntercepting: row["Eve Intercepting"] === "Yes",
@@ -557,18 +509,13 @@ const BB84Simulator = () => {
                     onMouseMove={handleMouseMove}
                     onMouseLeave={handleMouseLeave}
                   >
-                    <td><BasisBadge basis={row["Alice Bases"]} /></td>
-                    <td><BitBadge bit={parseInt(row["Alice Bit"])} /></td>
-                    <td><BasisBadge basis={row["Bob Basis"]} /></td>
-                    <td><BitBadge bit={parseInt(row["Bob Measured Bit"])} /></td>
-                    <td>
-                      <EveBitDisplay 
-                        eveBit={row["Eve Bit"] !== "-" ? parseInt(row["Eve Bit"]) : null}
-                        eveIntercepting={row["Eve Intercepting"] === "Yes"}
-                      />
-                    </td>
-                    <td><YesNoText value={row["Eve Intercepting"]} /></td>
-                    <td><YesNoText value={row["Match"]} /></td>
+                    <td><BasisIndicator basis={row["Alice Basis"].includes("+") ? 0 : 1} /></td>
+                    <td><BitIndicator bit={parseInt(row["Alice Bit"])} /></td>
+                    <td><BasisIndicator basis={row["Bob Basis"].includes("+") ? 0 : 1} /></td>
+                    <td><BitIndicator bit={parseInt(row["Bob Measured Bit"])} /></td>
+                    <td>{row["Eve Bit"] === "-" ? "-" : <BitIndicator bit={parseInt(row["Eve Bit"])} />}</td>
+                    <td>{row["Eve Intercepting"]}</td>
+                    <td>{row["Match"]}</td>
                   </tr>
                 );
               })}
@@ -661,15 +608,6 @@ const BB84Simulator = () => {
         </div>
       </div>
 
-      <StepTimeline 
-        isRunning={isRunning}
-        tableData={tableData}
-        siftedKey={siftedKey}
-        qber={qber}
-        encryptedData={encryptedData}
-        decryptedMessage={decryptedMessage}
-      />
-
       <StatusBadges 
         qber={qber}
         siftedKey={siftedKey}
@@ -716,4 +654,3 @@ const BB84Simulator = () => {
 };
 
 export default BB84Simulator;
-
