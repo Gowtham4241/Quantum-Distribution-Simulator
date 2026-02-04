@@ -474,8 +474,25 @@ td {
   font-weight: 500;
 }
 
-tr.correct { background: #5ce771; }
-tr.eve-present { background: #ef5f70; }
+tr.correct {
+  /* Soft green background for matched bases (secure) */
+  background: linear-gradient(90deg, rgba(209,250,229,0.6), rgba(71, 219, 150, 0.45));
+  color: #064e3b;
+  border-left: 4px solid rgba(16,185,129,0.12);
+}
+
+tr.eve-dark {
+  /* Muted maroon with subtle transparency so content remains readable (danger but soft) */
+  background: linear-gradient(90deg, rgb(253, 45, 45), rgb(253, 45, 45));
+  color: #2b0b0b; /* dark text for good contrast */
+  border-left: 4px solid rgba(127,29,29,0.18);
+}
+
+tr.eve-light {
+  /* Light red / pink soft warning */
+  background: linear-gradient(90deg, rgba(232, 33, 49, 0.35), rgba(232, 33, 49, 0.35));
+  color: #4a0b0b;
+}
 tr.error { background: #fb3131; }
 tr.bases-differ { background: #ffffff; }
 tr.highlighted { 
@@ -507,18 +524,7 @@ tr.highlighted {
   padding: 24px;
   box-shadow: var(--shadow-1);
   transition: all 0.3s ease;
-  position: relative; /* allow absolute positioning of corner info icon */
-}
-
-.result-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-2);
-}
-
-.result-card h3 {
-  font-size: 1.2rem;
-  margin-bottom: 16px;
-  color: var(--pri-2);
+  position: relative; /* keep info icon inside card boundary */
 }
 
 .key-display {
