@@ -1,0 +1,357 @@
+/* ============================================
+   TABLE CONTAINER & LAYOUT
+   ============================================ */
+
+.results-table {
+  margin: 2rem 0;
+  padding: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 16px;
+}
+
+.results-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+}
+
+/* ============================================
+   TABLE HEADER
+   ============================================ */
+
+.results-table thead {
+  background: linear-gradient(135deg, #e9d5ff 0%, #ddd6fe 100%);
+  border-bottom: 2px solid rgba(168, 85, 247, 0.15);
+}
+
+.results-table thead tr {
+  height: 56px;
+}
+
+.results-table thead th {
+  padding: 14px 18px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #2d1b4e;
+  letter-spacing: 0.3px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.results-table thead th:first-child {
+  text-align: left;
+  border-top-left-radius: 16px;
+}
+
+.results-table thead th:last-child {
+  text-align: right;
+  border-top-right-radius: 16px;
+}
+
+/* ============================================
+   TABLE ROWS & ROW STATES
+   ============================================ */
+
+.results-table tbody tr {
+  height: 56px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  transition: background-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.results-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+/* Base white background */
+.results-table tbody tr {
+  background: #ffffff;
+}
+
+/* Light green — Eve=Yes && Bases=Yes */
+.results-table tbody tr.eve-yes-bases-yes {
+  background: linear-gradient(90deg, #c8f5e6 0%, #d4f8ec 100%);
+}
+
+/* Light red — Eve=Yes && Bases=No */
+.results-table tbody tr.eve-yes-bases-no {
+  background: linear-gradient(90deg, #ffccdd 0%, #ffc7ce 100%);
+}
+
+/* Dark red — Bases=No (Eve not intercepting) */
+.results-table tbody tr.bases-no-dark {
+  background: linear-gradient(90deg, #ff9999 0%, #ff8888 100%);
+}
+
+/* Bases matched (old class, kept for compatibility) */
+.results-table tbody tr.bases-match {
+  background: linear-gradient(90deg, #c8f5e6 0%, #d4f8ec 100%);
+}
+
+/* Eve present (old class, kept for compatibility) */
+.results-table tbody tr.eve-present {
+  background: linear-gradient(90deg, #ffccdd 0%, #ffc7ce 100%);
+}
+
+/* Alternate row coloring for readability (optional, for rows that don't have state) */
+.results-table tbody tr:nth-child(even):not(.bases-match):not(.eve-present) {
+  background: rgba(248, 248, 250, 0.5);
+}
+
+/* Hover state */
+.results-table tbody tr:hover {
+  background: linear-gradient(90deg, rgba(229, 231, 235, 0.4) 0%, rgba(242, 242, 246, 0.4) 100%);
+  box-shadow: inset 0 0 12px rgba(59, 130, 246, 0.08);
+}
+
+.results-table tbody tr.eve-yes-bases-yes:hover {
+  background: linear-gradient(90deg, rgba(200, 245, 230, 0.9) 0%, rgba(212, 248, 236, 0.9) 100%);
+}
+
+.results-table tbody tr.eve-yes-bases-no:hover {
+  background: linear-gradient(90deg, rgba(255, 204, 221, 0.9) 0%, rgba(255, 199, 206, 0.9) 100%);
+}
+
+.results-table tbody tr.bases-no-dark:hover {
+  background: linear-gradient(90deg, rgba(255, 153, 153, 0.9) 0%, rgba(255, 136, 136, 0.9) 100%);
+}
+
+.results-table tbody tr.bases-match:hover {
+  background: linear-gradient(90deg, rgba(200, 245, 230, 0.9) 0%, rgba(212, 248, 236, 0.9) 100%);
+}
+
+.results-table tbody tr.eve-present:hover {
+  background: linear-gradient(90deg, rgba(255, 204, 221, 0.9) 0%, rgba(255, 199, 206, 0.9) 100%);
+}
+
+/* ============================================
+   TABLE CELLS
+   ============================================ */
+
+.results-table tbody td {
+  padding: 12px 18px;
+  font-size: 14px;
+  color: #1f2937;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 1.5;
+}
+
+.results-table tbody td:first-child {
+  text-align: left;
+  padding-left: 24px;
+}
+
+.results-table tbody td:last-child {
+  text-align: right;
+  padding-right: 24px;
+}
+
+/* ============================================
+   BIT BADGE (Circular)
+   ============================================ */
+
+.bit-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 15px;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.bit-badge:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.bit-badge-0 {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.bit-badge-0:hover {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.bit-badge-1 {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.bit-badge-1:hover {
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* ============================================
+   BASIS BADGE (Rounded Square)
+   ============================================ */
+
+.basis-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 18px;
+  border: 2.5px solid;
+  transition: all 0.1s ease;
+  line-height: 1;
+}
+
+.basis-badge-plus {
+  color: #3b82f6;
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.basis-badge-plus:hover {
+  background: rgba(59, 130, 246, 0.16);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+.basis-badge-cross {
+  color: #f59e0b;
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.basis-badge-cross:hover {
+  background: rgba(245, 158, 11, 0.16);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+}
+
+/* ============================================
+   EVE BIT DASH (when Eve didn't intercept)
+   ============================================ */
+
+.eve-bit-dash {
+  display: inline-block;
+  color: #9ca3af;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1;
+  user-select: none;
+}
+
+/* ============================================
+   YES/NO TEXT (normal readable font)
+   ============================================ */
+
+.yes-no-text {
+  color: #374151;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+
+/* ============================================
+   HIGHLIGHTED ROW (during key sifting animation)
+   ============================================ */
+
+.results-table tbody tr.highlighted {
+  background: linear-gradient(90deg, #fef3c7 0%, #fffbeb 100%);
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.2), inset 0 0 12px rgba(251, 191, 36, 0.1);
+  animation: highlightPulse 0.6s ease-out;
+}
+
+@keyframes highlightPulse {
+  0% {
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.4), inset 0 0 16px rgba(251, 191, 36, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 16px rgba(251, 191, 36, 0.2), inset 0 0 12px rgba(251, 191, 36, 0.1);
+  }
+}
+
+/* ============================================
+   ERROR & CORRECT ROW STATES
+   ============================================ */
+
+.results-table tbody tr.error {
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.08) 0%, rgba(254, 242, 242, 0.5) 100%);
+}
+
+.results-table tbody tr.correct {
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.08) 0%, rgba(240, 253, 244, 0.5) 100%);
+}
+
+/* ============================================
+   BASES DIFFER ROW STATE
+   ============================================ */
+
+.results-table tbody tr.bases-differ {
+  background: linear-gradient(90deg, rgba(229, 231, 235, 0.6) 0%, rgba(249, 250, 251, 0.6) 100%);
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .results-table thead th,
+  .results-table tbody td {
+    padding: 12px 12px;
+    font-size: 13px;
+  }
+
+  .bit-badge {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .basis-badge {
+    min-width: 36px;
+    height: 32px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .results-table {
+    border-radius: 12px;
+  }
+
+  .results-table thead th,
+  .results-table tbody td {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .results-table thead th:first-child {
+    border-top-left-radius: 12px;
+  }
+
+  .results-table thead th:last-child {
+    border-top-right-radius: 12px;
+  }
+
+  .bit-badge {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .basis-badge {
+    min-width: 32px;
+    height: 28px;
+    font-size: 14px;
+    padding: 0 8px;
+  }
+}
