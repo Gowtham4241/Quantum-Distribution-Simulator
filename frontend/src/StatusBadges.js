@@ -86,26 +86,6 @@ const StatusBadges = ({ qber, siftedKey }) => {
           {siftedKey.length} bits
         </div>
       </motion.div>
-
-      {isCompromised && (
-        <motion.div
-          className="status-badge security-alert"
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-        >
-          <div className="badge-icon">🚨</div>
-          <div className="badge-content">
-            <div className="badge-label">Security Alert</div>
-            <div className="badge-status-alert">
-              Eavesdropping Detected!
-            </div>
-          </div>
-          <div className="badge-detail">
-            Please regenerate key
-          </div>
-        </motion.div>
-      )}
     </div>
   );
 };
