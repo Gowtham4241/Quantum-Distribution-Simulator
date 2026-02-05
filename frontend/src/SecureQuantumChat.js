@@ -58,7 +58,7 @@ const SecureQuantumChat = ({ siftedKey, encryptedData, decryptedMessage, qber })
     setIsSimulating(false);
   };
 
-  const isKeyValid = siftedKey.length > 0;
+  const isKeyValid = siftedKey.length > 0 && parseFloat(qber) <= 20;
 
   return (
     <div className="secure-quantum-chat">
