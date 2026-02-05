@@ -1,0 +1,308 @@
+/* ========================================
+   Mode Toggle Component Styles
+   Classical & Quantum Theme Toggle
+   ======================================== */
+
+.mode-toggle-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ====== TOGGLE BUTTON ====== */
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-1);
+  outline: none;
+  user-select: none;
+}
+
+.mode-toggle:hover {
+  border-color: var(--pri-1);
+  box-shadow: var(--shadow-2), var(--glow-blue);
+  transform: translateY(-2px);
+}
+
+.mode-toggle:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-1);
+}
+
+.mode-toggle:focus-visible {
+  outline: 2px solid var(--pri-1);
+  outline-offset: 2px;
+}
+
+/* ====== TOGGLE TRACK & THUMB ====== */
+.toggle-track {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--bg-2);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.mode-toggle.quantum-active .toggle-track {
+  background: linear-gradient(135deg, #7c3aed, #06b6d4);
+  border-color: #06b6d4;
+  box-shadow: inset 0 0 8px rgba(6, 182, 212, 0.3);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: var(--text);
+  border-radius: 10px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.mode-toggle.quantum-active .toggle-thumb {
+  left: 22px;
+  background: #00ff88;
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+}
+
+/* ====== MODE LABEL ====== */
+.mode-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 120px;
+  overflow: hidden;
+}
+
+.mode-icon {
+  font-size: 16px;
+  display: inline-block;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: icon-pulse 0.6s ease-in-out;
+}
+
+.mode-toggle.quantum-active .mode-icon {
+  animation: quantum-pulse 0.6s ease-in-out;
+  color: #00ff88;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+}
+
+.mode-text {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.mode-toggle.quantum-active .mode-text {
+  color: #00ff88;
+  text-shadow: 0 0 6px rgba(0, 255, 136, 0.4);
+}
+
+/* ====== ANIMATIONS ====== */
+@keyframes icon-pulse {
+  0% {
+    transform: scale(0.8) rotate(-45deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes quantum-pulse {
+  0% {
+    transform: scale(0.8) rotate(45deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+/* Theme transition animation for the entire app */
+.bb84-simulator.theme-transitioning {
+  animation: theme-fade 0.4s ease-in-out;
+}
+
+@keyframes theme-fade {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.98;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* ====== RESPONSIVE DESIGN ====== */
+@media (max-width: 768px) {
+  .mode-toggle-container {
+    top: 12px;
+    right: 12px;
+  }
+
+  .mode-toggle {
+    padding: 8px 10px;
+    font-size: 12px;
+    gap: 8px;
+  }
+
+  .mode-label {
+    min-width: 100px;
+  }
+
+  .mode-text {
+    display: none;
+  }
+
+  .mode-toggle.quantum-active .mode-text {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .mode-toggle-container {
+    top: 8px;
+    right: 8px;
+  }
+
+  .mode-toggle {
+    padding: 6px 8px;
+  }
+
+  .toggle-track {
+    width: 40px;
+    height: 22px;
+  }
+
+  .toggle-thumb {
+    width: 18px;
+    height: 18px;
+  }
+
+  .mode-toggle.quantum-active .toggle-thumb {
+    left: 20px;
+  }
+
+  .mode-icon {
+    font-size: 14px;
+  }
+}
+
+/* ====== DARK MODE QUANTUM ENHANCEMENTS ====== */
+[data-theme-mode="quantum"] .mode-toggle {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(0, 255, 136, 0.3);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.2);
+}
+
+[data-theme-mode="quantum"] .mode-toggle:hover {
+  border-color: #00ff88;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.4), var(--glow-quantum);
+  background: rgba(30, 41, 59, 0.95);
+}
+
+[data-theme-mode="quantum"] .mode-toggle.classical-active {
+  color: #cbd5e1;
+}
+
+[data-theme-mode="quantum"] .toggle-track {
+  background: rgba(100, 116, 139, 0.4);
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+/* ====== CLASSICAL MODE STYLING ====== */
+[data-theme-mode="classical"] .mode-toggle {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+[data-theme-mode="classical"] .mode-toggle:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #3b82f6;
+}
+
+/* ====== ACCESSIBILITY IMPROVEMENTS ====== */
+/* High contrast mode support */
+@media (prefers-contrast: more) {
+  .mode-toggle {
+    border-width: 2px;
+  }
+
+  .toggle-track {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .mode-toggle,
+  .toggle-track,
+  .toggle-thumb,
+  .mode-icon,
+  .mode-text,
+  .bb84-simulator.theme-transitioning {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .mode-toggle:hover {
+    transform: none;
+  }
+
+  .mode-toggle:active {
+    transform: none;
+  }
+}
+
+/* Forced colors mode (Windows High Contrast) */
+@media (forced-colors: active) {
+  .mode-toggle {
+    border: 2px solid CanvasText;
+  }
+
+  .mode-toggle:focus-visible {
+    outline: 2px solid CanvasText;
+  }
+
+  .toggle-track {
+    background: Canvas;
+    border: 1px solid CanvasText;
+  }
+
+  .toggle-thumb {
+    background: CanvasText;
+  }
+}
