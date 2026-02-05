@@ -39,6 +39,12 @@
   
   --glow-blue: 0 0 10px rgba(59, 130, 246, 0.5);
   --glow-purple: 0 0 10px rgba(139, 92, 246, 0.5);
+
+  /* Theme mode variable for transitions */
+  --app-mode: classical;
+  --accent-neon: #3b82f6;
+  --accent-cyan: #06b6d4;
+  --glow-quantum: 0 0 10px rgba(59, 130, 246, 0.4);
 }
 
 /* ---------- Reset & Base ---------- */
@@ -60,13 +66,24 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
-.quantum-simulator {
+/* Apply theme-aware background for classical mode */
+[data-theme-mode="classical"] body {
+  background: linear-gradient(135deg, #f0f4f8 0%, #f8fafc 100%);
+}
+
+[data-theme-mode="quantum"] body {
+  background: radial-gradient(circle at top left, #0f172a, #000000);
+}
+
+.bb84-simulator.quantum-simulator {
   max-width: 1200px;
   margin: 40px auto;
   padding: 24px;
   position: relative;
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
 }
 
 /* ---------- Header ---------- */
@@ -82,6 +99,7 @@ body {
   background-image: 
     radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 25%),
     radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.05) 0%, transparent 25%);
+  transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
 .header h1 {
@@ -343,6 +361,18 @@ body {
   border: 2px solid #ef4444;
 }
 
+.bit-indicator.placeholder {
+  background: #e2e8f0;
+  color: #64748b;
+  border: 2px dashed #94a3b8;
+}
+
+.basis-display {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: var(--text-sub);
+}
+
 .communication-line {
   flex: 1;
   height: 8px;
@@ -357,8 +387,9 @@ body {
 /* Photon */
 .photon {
   position: absolute;
-  top: -24px;
-  left: 0;
+  top: 15;
+  transform: translateY(-50%);
+  left: 75%;
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -1165,11 +1196,7 @@ tr.highlighted {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
-.status-badge.security-alert {
-  border-color: #dc2626;
-  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
-  animation: shake 0.5s infinite alternate;
-}
+
 
 @keyframes pulse-danger {
   0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
@@ -1840,4 +1867,243 @@ tr.highlighted {
   .status-badge .badge-detail {
     display: none;
   }
+}
+
+/* ========================================
+   Quantum Mode Theme Enhancements
+   ======================================== */
+
+[data-theme-mode="quantum"] .input-group input {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+[data-theme-mode="quantum"] .input-group input::placeholder {
+  color: #94a3b8;
+}
+
+[data-theme-mode="quantum"] .input-group input:focus {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.3);
+}
+
+[data-theme-mode="quantum"] .input-group label {
+  color: #cbd5e1;
+}
+
+[data-theme-mode="quantum"] .status-badge {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+[data-theme-mode="quantum"] .status-badge.secure {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border-color: #10b981;
+}
+
+[data-theme-mode="quantum"] .status-badge.pending {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%);
+  border-color: #f59e0b;
+}
+
+[data-theme-mode="quantum"] .status-badge.compromised {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%);
+  border-color: #ef4444;
+}
+
+[data-theme-mode="quantum"] .status-badge.valid {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(6, 182, 212, 0.05) 100%);
+  border-color: #06b6d4;
+}
+
+[data-theme-mode="quantum"] .status-badge.invalid {
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.15) 0%, rgba(100, 116, 139, 0.05) 100%);
+  border-color: #64748b;
+}
+
+[data-theme-mode="quantum"] .status-badge .badge-label {
+  color: #cbd5e1;
+}
+
+[data-theme-mode="quantum"] .status-badge .badge-status {
+  color: #e2e8f0;
+}
+
+[data-theme-mode="quantum"] .status-badge .badge-detail {
+  color: #94a3b8;
+}
+
+[data-theme-mode="quantum"] .encryption-pipeline {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+[data-theme-mode="quantum"] .step-label {
+  color: #e2e8f0;
+}
+
+[data-theme-mode="quantum"] .pipeline-arrow {
+  color: #06b6d4;
+}
+
+[data-theme-mode="quantum"] .panel-header {
+  background: #1e293b;
+  border-bottom-color: rgba(148, 163, 184, 0.3);
+}
+
+[data-theme-mode="quantum"] .alice-header {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(6, 182, 212, 0.08) 100%);
+  border-bottom-color: rgba(6, 182, 212, 0.5);
+}
+
+[data-theme-mode="quantum"] .bob-header {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%);
+  border-bottom-color: rgba(16, 185, 129, 0.5);
+}
+
+[data-theme-mode="quantum"] .party-label {
+  color: #e2e8f0;
+}
+
+[data-theme-mode="quantum"] .panel-content {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+[data-theme-mode="quantum"] .empty-state {
+  color: #94a3b8;
+}
+
+[data-theme-mode="quantum"] .empty-state .hint {
+  color: #64748b;
+}
+
+[data-theme-mode="quantum"] .ciphertext,
+[data-theme-mode="quantum"] .plaintext {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+[data-theme-mode="quantum"] .encrypted-data h4,
+[data-theme-mode="quantum"] .decrypted-data h4 {
+  color: #06b6d4;
+}
+
+[data-theme-mode="quantum"] .ciphertext-stage {
+  background: rgba(6, 182, 212, 0.15);
+  color: #e2e8f0;
+}
+
+[data-theme-mode="quantum"] .plaintext-stage {
+  background: rgba(16, 185, 129, 0.15);
+  color: #e2e8f0;
+}
+
+[data-theme-mode="quantum"] .stage-arrow {
+  color: #94a3b8;
+}
+
+/* ========================================
+   Quantum Mode: Quantum Channel Styling
+   ======================================== */
+
+[data-theme-mode="quantum"] .quantum-channel-container {
+  position: relative;
+  margin-bottom: 32px;
+}
+
+[data-theme-mode="quantum"] .quantum-channel {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-color: rgba(6, 182, 212, 0.2);
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.2), var(--shadow-2);
+}
+
+[data-theme-mode="quantum"] .party {
+  background: rgba(30, 41, 59, 0.8);
+  border: 2px solid rgba(148, 163, 184, 0.3);
+  color: #e2e8f0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+[data-theme-mode="quantum"] .party:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  border-color: rgba(148, 163, 184, 0.5);
+}
+
+[data-theme-mode="quantum"] .party.alice {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(6, 182, 212, 0.1) 100%);
+  border-color: rgba(6, 182, 212, 0.6);
+  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.15);
+}
+
+[data-theme-mode="quantum"] .party.alice:hover {
+  box-shadow: 0 12px 32px rgba(6, 182, 212, 0.25);
+  border-color: rgba(6, 182, 212, 0.8);
+}
+
+[data-theme-mode="quantum"] .party.bob {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
+  border-color: rgba(16, 185, 129, 0.6);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
+}
+
+[data-theme-mode="quantum"] .party.bob:hover {
+  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.25);
+  border-color: rgba(16, 185, 129, 0.8);
+}
+
+[data-theme-mode="quantum"] .party.eve {
+  background: linear-gradient(135deg, rgba(244, 114, 182, 0.25) 0%, rgba(244, 114, 182, 0.15) 100%);
+  border-color: rgba(244, 114, 182, 0.7);
+  box-shadow: 0 0 20px rgba(244, 114, 182, 0.3);
+  opacity: 0.95;
+}
+
+[data-theme-mode="quantum"] .party.eve.active {
+  opacity: 1;
+  box-shadow: 0 0 30px rgba(244, 114, 182, 0.5), 0 0 60px rgba(244, 114, 182, 0.3);
+  border-color: rgba(244, 114, 182, 0.9);
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+[data-theme-mode="quantum"] .party .label {
+  color: #e2e8f0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme-mode="quantum"] .party .description {
+  color: #cbd5e1;
+}
+
+[data-theme-mode="quantum"] .eve-indicator {
+  background: rgba(244, 114, 182, 0.2);
+  color: #f472b6;
+  border: 2px solid rgba(244, 114, 182, 0.5);
+}
+
+[data-theme-mode="quantum"] .communication-line {
+  flex: 1;
+  position: relative;
+  height: 80px;
+  background: linear-gradient(90deg, 
+    rgba(6, 182, 212, 0.1) 0%,
+    rgba(99, 102, 241, 0.1) 50%,
+    rgba(244, 114, 182, 0.1) 100%
+  );
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+[data-theme-mode="quantum"] .photon {
+  filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.6));
+}
+
+[data-theme-mode="quantum"] .quantum-wave {
+  filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.4));
 }
