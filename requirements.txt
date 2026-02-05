@@ -1,8 +1,8 @@
 flask
 flask-cors
+gunicorn
 qiskit
 qiskit-aer
-numpy
+qiskit-ibm-runtime
 pycryptodome
-gunicorn
-qiskit_ibm_runtime 
+numpy
