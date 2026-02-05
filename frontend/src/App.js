@@ -432,7 +432,7 @@ const BB84Simulator = () => {
       <div className="controls-container">
         <div className="controls">
           {[
-            { label: "Number of Particles", value: n, min: 10, max: 156, step: 1, setter: setN, tooltip: "Increase qubits for more reliable sifting. More data = better key." },
+            { label: "Number of Particles", value: n, min: 10, max: 100, step: 1, setter: setN, tooltip: "Increase qubits for more reliable sifting. More data = better key." },
             { label: "Eve probability", value: eveProb, min: 0, max: 1, step: 0.1, setter: setEveProb, format: (v) => `${(v * 100).toFixed(0)}%`, tooltip: "How often the eavesdropper intercepts. Higher values increase QBER." },
             { label: "Animation speed", value: speed, min: 10, max: 300, step: 10, setter: setSpeed, format: (v) => `${v}ms`, tooltip: "Speed of photon animation across the quantum channel (visual only)." },
           ].map((ctrl) => (
