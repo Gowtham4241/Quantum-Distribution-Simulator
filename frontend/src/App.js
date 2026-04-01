@@ -216,7 +216,7 @@ const BB84Simulator = () => {
     setMessage("");
 
     try {
-      const response = await fetch('https://quantum-distribution-simulator-production.up.railway.app/api/bb84', {
+      const response = await fetch('https://quantum-key-distribution-simulator-6cwh.onrender.com', {
         method: 'POST',
         headers: {
         'Content-Type': 'application/json',
