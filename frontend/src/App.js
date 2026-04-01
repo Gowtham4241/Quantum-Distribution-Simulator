@@ -216,7 +216,7 @@ const BB84Simulator = () => {
     setMessage("");
 
     try {
-      const response = await fetch('https://quantum-key-distribution-simulator-6cwh.onrender.com', {
+      const response = await fetch('https://quantum-key-distribution-simulator-6cwh.onrender.com/api/bb84', {
         method: 'POST',
         headers: {
         'Content-Type': 'application/json',
@@ -310,7 +310,7 @@ const BB84Simulator = () => {
     setTimeline("Encrypting message with quantum key...");
 
     try {
-      const response = await fetch('https://quantum-distribution-simulator-production.up.railway.app/api/encrypt', {
+      const response = await fetch('https://quantum-key-distribution-simulator-6cwh.onrender.com/api/encrypt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -352,7 +352,7 @@ const BB84Simulator = () => {
     setTimeline("Decrypting message with quantum key...");
 
     try {
-      const response = await fetch('https://quantum-distribution-simulator-production.up.railway.app/api/decrypt', {
+      const response = await fetch('https://quantum-key-distribution-simulator-6cwh.onrender.com/api/decrypt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
